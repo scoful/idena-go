@@ -12,6 +12,7 @@ require (
 	github.com/go-stack/stack v1.8.1
 	github.com/golang/protobuf v1.5.2
 	github.com/google/tink/go v0.0.0-20200401233402-a389e601043a
+?	github.com/gopherjs/gopherjs v0.0.0-20190910122728-9d188e94fb99 // indirect
 	github.com/ipfs/go-blockservice v0.4.0
 	github.com/ipfs/go-cid v0.2.0
 	github.com/ipfs/go-ipfs-files v0.1.1
@@ -47,6 +48,7 @@ require (
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
+	github.com/idena-network/idena-wasm-binding v0.0.0
 )
 
 require (
@@ -277,5 +279,5 @@ require (
 replace github.com/cosmos/iavl => github.com/idena-network/iavl v0.12.3-0.20211223100228-a33b117aa31e
 
 replace github.com/libp2p/go-libp2p-pnet => github.com/idena-network/go-libp2p-pnet v0.2.1-0.20200406075059-75d9ee9b85ed
-
+replace github.com/idena-network/idena-wasm-binding => ..\idena-wasm\idena-wasm-binding
 go 1.17
