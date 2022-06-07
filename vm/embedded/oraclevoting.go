@@ -157,7 +157,7 @@ func (f *OracleVoting6) Deploy(args ...[]byte) error {
 		return errors.New("failed to hash args")
 	}
 
-	f.SetOwner(f.ctx.Sender())
+	f.SetOwner(f.ctx.Caller())
 	f.SetUint64("startTime", startTime)
 	f.SetArray(keyFact, fact)
 	f.SetByte("state", state)
@@ -245,7 +245,7 @@ func (f *OracleVoting6) sendVoteProof(args ...[]byte) error {
 	if err != nil {
 		return err
 	}
-	if !f.env.State(f.ctx.Sender()).NewbieOrBetter() {
+	if !f.env.State(f.ctx.Caller()).NewbieOrBetter() {
 		return errors.New("sender is not identity")
 	}
 	if f.env.Epoch() != f.GetUint16("epoch") {
@@ -254,7 +254,7 @@ func (f *OracleVoting6) sendVoteProof(args ...[]byte) error {
 	if f.GetByte("state") != oracleVotingStateStarted {
 		return errors.New("contract is not in running state")
 	}
-	if f.votes.Get(f.ctx.Sender().Bytes()) != nil {
+	if f.votes.Get(f.ctx.Caller().Bytes()) != nil {
 		return errors.New("sender has voted already")
 	}
 
@@ -269,7 +269,7 @@ func (f *OracleVoting6) sendVoteProof(args ...[]byte) error {
 		return errors.New("tx amount is less than voting minimal payment")
 	}
 
-	pubKeyData := f.env.PubKey(f.ctx.Sender())
+	pubKeyData := f.env.PubKey(f.ctx.Caller())
 
 	selectionHash := crypto.Hash(append(pubKeyData, f.GetArray("vrfSeed")...))
 
@@ -287,17 +287,17 @@ func (f *OracleVoting6) sendVoteProof(args ...[]byte) error {
 	}
 
 	var newSecretVotesCount *uint64
-	if f.voteHashes.Get(f.ctx.Sender().Bytes()) == nil {
+	if f.voteHashes.Get(f.ctx.Caller().Bytes()) == nil {
 		v := f.getSecretVotesCount() + 1
 		f.setSecretVotesCount(v)
 		newSecretVotesCount = &v
 	}
-	f.voteHashes.Set(f.ctx.Sender().Bytes(), voteHash)
+	f.voteHashes.Set(f.ctx.Caller().Bytes(), voteHash)
 
 	var discriminated bool
 	if enabledDiscrimination := f.GetByte("dis") == 1; enabledDiscrimination {
 		if notDiscriminatedProof := f.GetByte("notDisP"); notDiscriminatedProof == 0 {
-			discriminated = f.env.IsDiscriminated(f.ctx.Sender())
+			discriminated = f.env.IsDiscriminated(f.ctx.Caller())
 			if !discriminated {
 				f.SetByte("notDisP", 1)
 			}
@@ -352,15 +352,15 @@ func (f *OracleVoting6) sendVote(args ...[]byte) error {
 		}
 	}
 
-	storedHash := f.voteHashes.Get(f.ctx.Sender().Bytes())
+	storedHash := f.voteHashes.Get(f.ctx.Caller().Bytes())
 
 	computedHash := crypto.Hash(append(common.ToBytes(vote), salt...))
 
 	if bytes.Compare(storedHash, computedHash[:]) != 0 {
 		return errors.New("wrong vote hash")
 	}
-	f.votes.Set(f.ctx.Sender().Bytes(), common.ToBytes(vote))
-	f.voteHashes.Remove(f.ctx.Sender().Bytes())
+	f.votes.Set(f.ctx.Caller().Bytes(), common.ToBytes(vote))
+	f.voteHashes.Remove(f.ctx.Caller().Bytes())
 	secretVotesCount := f.getSecretVotesCount()
 	var newSecretVotesCount *uint64
 	if secretVotesCount > 0 {
@@ -371,7 +371,7 @@ func (f *OracleVoting6) sendVote(args ...[]byte) error {
 
 	var discriminated bool
 	if enabledDiscrimination {
-		discriminated = f.env.IsDiscriminated(f.ctx.Sender())
+		discriminated = f.env.IsDiscriminated(f.ctx.Caller())
 		if !discriminated {
 			if notDiscriminatedVote := f.GetByte("notDisV"); notDiscriminatedVote == 0 {
 				f.SetByte("notDisV", 1)
@@ -386,7 +386,7 @@ func (f *OracleVoting6) sendVote(args ...[]byte) error {
 	c := f.GetUint64("votedCount") + 1
 	f.SetUint64("votedCount", c)
 
-	delegatee := f.env.Delegatee(f.ctx.Sender())
+	delegatee := f.env.Delegatee(f.ctx.Caller())
 
 	var changeVoteOptions = func(vote byte, diff int64) *uint64 {
 		if discriminated {
@@ -754,7 +754,7 @@ func (f *OracleVoting6) Terminate(args ...[]byte) (common.Address, [][]byte, err
 		if period > time.Hour*24*30 {
 			balance := f.env.Balance(f.ctx.ContractAddr())
 			if balance.Sign() > 0 {
-				if err := f.env.Send(f.ctx, f.ctx.Sender(), balance); err != nil {
+				if err := f.env.Send(f.ctx, f.ctx.Caller(), balance); err != nil {
 					return common.Address{}, nil, err
 				}
 			}
@@ -790,7 +790,7 @@ func (f *OracleVoting6) Terminate(args ...[]byte) (common.Address, [][]byte, err
 			}
 
 			if votedCount+secretVotes == 0 {
-				if err := f.env.Send(f.ctx, f.ctx.Sender(), balance.Sub(balance, ownerReward)); err != nil {
+				if err := f.env.Send(f.ctx, f.ctx.Caller(), balance.Sub(balance, ownerReward)); err != nil {
 					return common.Address{}, nil, err
 				}
 			} else {
