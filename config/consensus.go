@@ -52,6 +52,7 @@ type ConsensusConf struct {
 	UpgradeIntervalBeforeValidation   time.Duration
 	ReductionOneDelay                 time.Duration
 	NewKeyWordsEpoch                  uint16
+	EnableUpgrade10                   bool
 }
 
 type ConsensusVerson uint16

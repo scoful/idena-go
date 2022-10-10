@@ -16,6 +16,7 @@ type buildingContext struct {
 	curNoncesPerSender map[common.Address]uint32
 	blockTxs           []*types.Transaction
 	blockGas           int
+	maxBlockGas        uint64
 }
 
 func newBuildingContext(
@@ -24,6 +25,7 @@ func newBuildingContext(
 	sortedPriorityTxs []*types.Transaction,
 	sortedTxsPerSender map[common.Address][]*types.Transaction,
 	curNoncesPerSender map[common.Address]uint32,
+	maxBlockGas uint64,
 ) *buildingContext {
 
 	ctx := &buildingContext{
@@ -32,6 +34,7 @@ func newBuildingContext(
 		sortedPriorityTxs:  sortedPriorityTxs,
 		sortedTxsPerSender: sortedTxsPerSender,
 		curNoncesPerSender: curNoncesPerSender,
+		maxBlockGas:        maxBlockGas,
 	}
 	return ctx
 }
@@ -62,7 +65,7 @@ func (ctx *buildingContext) addNextPriorityTxToBlock() {
 			break
 		}
 		gasToAdd += fee.CalculateGas(tx)
-		if ctx.blockGas+gasToAdd > types.MaxBlockGas {
+		if uint64(ctx.blockGas+gasToAdd) > ctx.maxBlockGas {
 			break
 		}
 		txsToAdd = append(txsToAdd, tx)
@@ -91,7 +94,7 @@ func (ctx *buildingContext) addTxsToBlock() {
 		if ctx.curNoncesPerSender[sender]+1 != tx.AccountNonce {
 			continue
 		}
-		if ctx.blockGas+fee.CalculateGas(tx) > types.MaxBlockGas {
+		if uint64(ctx.blockGas+fee.CalculateGas(tx)) > ctx.maxBlockGas {
 			return
 		}
 		ctx.blockTxs = append(ctx.blockTxs, tx)
