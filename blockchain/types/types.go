@@ -44,6 +44,8 @@ const (
 	Final        = 255
 
 	MaxBlockGas = 3000 * 1024
+
+	MaxBlockGasUpgrade10 = 5000 * 1024
 )
 
 type BlockFlag uint32
@@ -70,6 +72,14 @@ func init() {
 		SubmitLongAnswersTx:  {},
 		EvidenceTx:           {},
 	}
+}
+
+
+func MaxBlockSize(enableUpgrade10 bool) uint64 {
+	if enableUpgrade10 {
+		return MaxBlockGasUpgrade10
+	}
+	return MaxBlockGas
 }
 
 type Network = uint32
