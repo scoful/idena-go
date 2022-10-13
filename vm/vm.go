@@ -36,8 +36,6 @@ type VmImpl struct {
 	head           *types.Header
 }
 
-
-
 type VmCreator = func(appState *appstate.AppState, block *types.Header, statsCollector collector.StatsCollector, cfg *config.Config) VM
 
 func NewVmImpl(appState *appstate.AppState, head *types.Header, statsCollector collector.StatsCollector, cfg *config.Config) VM {
@@ -153,7 +151,7 @@ func (vm *VmImpl) IsWasm(tx *types.Transaction) bool {
 
 func (vm *VmImpl) ContractAddr(tx *types.Transaction, from *common.Address) common.Address {
 	switch tx.Type {
-	case types.CallContractTx, types.TerminateContractTx :
+	case types.CallContractTx, types.TerminateContractTx:
 		return *tx.To
 	case types.DeployContractTx:
 		if vm.IsWasm(tx) {
@@ -168,13 +166,13 @@ func (vm *VmImpl) ContractAddr(tx *types.Transaction, from *common.Address) comm
 	panic("unknown tx type")
 }
 
-func (vm *VmImpl) Run(tx *types.Transaction,  from *common.Address, gasLimit int64) *types.TxReceipt {
+func (vm *VmImpl) Run(tx *types.Transaction, from *common.Address, gasLimit int64) *types.TxReceipt {
 	if tx.Type != types.CallContractTx && tx.Type != types.DeployContractTx && tx.Type != types.TerminateContractTx {
 		return &types.TxReceipt{Success: false, Error: UnexpectedTx}
 	}
 
 	if vm.IsWasm(tx) {
-		wasmVm := wasm.NewWasmVM(vm.appState, vm.head)
+		wasmVm := wasm.NewWasmVM(vm.appState, vm.head, vm.statsCollector)
 		return wasmVm.Run(tx, costs.GasToWasmGas(uint64(gasLimit)))
 	}
 

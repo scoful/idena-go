@@ -8,13 +8,15 @@ import (
 	"github.com/idena-network/idena-go/common"
 	"github.com/idena-network/idena-go/common/math"
 	"github.com/idena-network/idena-go/core/appstate"
+	"github.com/idena-network/idena-go/stats/collector"
 	"github.com/idena-network/idena-go/vm/costs"
 	"github.com/idena-network/idena-wasm-binding/lib"
 )
 
 type WasmVM struct {
-	appState *appstate.AppState
-	head     *types.Header
+	appState       *appstate.AppState
+	head           *types.Header
+	statsCollector collector.StatsCollector
 }
 
 func (vm *WasmVM) deploy(env *WasmEnv, tx *types.Transaction, limit uint64) (contractAddr common.Address, gasUsed uint64, actionResult []byte, err error) {
@@ -64,7 +66,7 @@ func (vm *WasmVM) call(env *WasmEnv, tx *types.Transaction, limit uint64) (contr
 
 func (vm *WasmVM) Run(tx *types.Transaction, gasLimit uint64) *types.TxReceipt {
 	ctx := NewContractContext(tx)
-	env := NewWasmEnv(vm.appState, ctx, vm.head)
+	env := NewWasmEnv(vm.appState, ctx, vm.head, vm.statsCollector)
 
 	var usedGas uint64
 	var err error
@@ -105,6 +107,6 @@ func (vm *WasmVM) Run(tx *types.Transaction, gasLimit uint64) *types.TxReceipt {
 	}
 }
 
-func NewWasmVM(appState *appstate.AppState, head *types.Header) *WasmVM {
-	return &WasmVM{appState: appState, head: head}
+func NewWasmVM(appState *appstate.AppState, head *types.Header, statsCollector collector.StatsCollector) *WasmVM {
+	return &WasmVM{appState: appState, head: head, statsCollector: statsCollector}
 }

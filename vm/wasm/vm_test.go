@@ -24,7 +24,7 @@ func TestVm_Erc20(t *testing.T) {
 	appState, _ := appstate.NewAppState(db, eventbus.New())
 	appState.Initialize(0)
 
-	vm := NewWasmVM(appState, createHeader(1, 1))
+	vm := NewWasmVM(appState, createHeader(1, 1), nil)
 	rnd := rand.New(rand.NewSource(1))
 	key, _ := crypto.GenerateKeyFromSeed(rnd)
 
@@ -52,7 +52,7 @@ func TestVm_Erc20(t *testing.T) {
 	})
 
 	addr := common.Address{0x1}
-	callAttach := attachments.CreateCallContractAttachment("transfer", addr.Bytes(), append(common.ToBytes(uint64(777)), []byte{0,0,0,0,0,0,0,0}...))
+	callAttach := attachments.CreateCallContractAttachment("transfer", addr.Bytes(), append(common.ToBytes(uint64(777)), []byte{0, 0, 0, 0, 0, 0, 0, 0}...))
 	payload, _ = callAttach.ToBytes()
 
 	tx = &types.Transaction{
@@ -92,7 +92,7 @@ func TestVm_Erc20(t *testing.T) {
 var nonce = uint32(1)
 
 func deployContract(key *ecdsa.PrivateKey, appState *appstate.AppState, code []byte, args ...[]byte) *types.TxReceipt {
-	vm := NewWasmVM(appState, createHeader(1, 1))
+	vm := NewWasmVM(appState, createHeader(1, 1), nil)
 	deployAttach := attachments.CreateDeployContractAttachment(common.Hash{}, code, args...)
 	payload, _ := deployAttach.ToBytes()
 
@@ -109,7 +109,7 @@ func deployContract(key *ecdsa.PrivateKey, appState *appstate.AppState, code []b
 }
 
 func callContract(key *ecdsa.PrivateKey, appState *appstate.AppState, contract common.Address, method string, args ...[]byte) *types.TxReceipt {
-	vm := NewWasmVM(appState, createHeader(1, 1))
+	vm := NewWasmVM(appState, createHeader(1, 1), nil)
 	callAttach := attachments.CreateCallContractAttachment(method, args...)
 	payload, _ := callAttach.ToBytes()
 
@@ -274,8 +274,6 @@ func Test_SharedFungibleToken(t *testing.T) {
 
 }
 
-
-
 func Test_IdenaSdkAsTest(t *testing.T) {
 	db := dbm.NewMemDB()
 	appState, _ := appstate.NewAppState(db, eventbus.New())
@@ -284,12 +282,10 @@ func Test_IdenaSdkAsTest(t *testing.T) {
 	rnd := rand.New(rand.NewSource(1))
 	key, _ := crypto.GenerateKeyFromSeed(rnd)
 
-
 	code, _ := testdata.IdenaSdkAsTest()
 	receipt := deployContract(key, appState, code)
 	t.Logf("%+v\n", receipt)
 	require.True(t, receipt.Success)
-
 
 	appState.State.IterateContractStore(receipt.ContractAddress, nil, nil, func(key []byte, value []byte) bool {
 		t.Logf("key=%v, value=%v\n", key, string(value))
@@ -305,4 +301,3 @@ func Test_IdenaSdkAsTest(t *testing.T) {
 		return false
 	})
 }
-

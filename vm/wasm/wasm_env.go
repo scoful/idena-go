@@ -5,6 +5,7 @@ import (
 	"github.com/idena-network/idena-go/common"
 	"github.com/idena-network/idena-go/core/appstate"
 	"github.com/idena-network/idena-go/crypto"
+	"github.com/idena-network/idena-go/stats/collector"
 	"github.com/idena-network/idena-go/vm/costs"
 	"github.com/idena-network/idena-wasm-binding/lib"
 	"github.com/pkg/errors"
@@ -36,6 +37,8 @@ type WasmEnv struct {
 	ctx      *ContractContext
 	head     *types.Header
 	parent   *WasmEnv
+
+	statsCollector collector.StatsCollector
 
 	contractStoreCache    map[common.Address]map[string]*contractValue
 	balancesCache         map[common.Address]*big.Int
@@ -151,7 +154,7 @@ func (w *WasmEnv) ContractCode(meter *lib.GasMeter, addr lib.Address) []byte {
 	return w.GetCode(addr)
 }
 
-func NewWasmEnv(appState *appstate.AppState, ctx *ContractContext, head *types.Header) *WasmEnv {
+func NewWasmEnv(appState *appstate.AppState, ctx *ContractContext, head *types.Header, statsCollector collector.StatsCollector) *WasmEnv {
 	return &WasmEnv{
 		id:                    1,
 		appState:              appState,
@@ -161,6 +164,7 @@ func NewWasmEnv(appState *appstate.AppState, ctx *ContractContext, head *types.H
 		balancesCache:         map[common.Address]*big.Int{},
 		deployedContractCache: map[common.Address]ContractData{},
 		contractStakeCache:    map[common.Address]*big.Int{},
+		statsCollector:        statsCollector,
 	}
 }
 
@@ -285,6 +289,7 @@ func (w *WasmEnv) CreateSubEnv(contract lib.Address, payAmount *big.Int, isDeplo
 		deployedContractCache: map[common.Address]ContractData{},
 		contractStakeCache:    map[common.Address]*big.Int{},
 		head:                  w.head,
+		statsCollector:        w.statsCollector,
 	}
 	return subEnv, nil
 }
@@ -322,6 +327,7 @@ func (w *WasmEnv) subBalance(address common.Address, amount *big.Int) {
 }
 
 func (w *WasmEnv) setBalance(address common.Address, amount *big.Int) {
+	collector.AddContractBalanceUpdate(w.statsCollector, address, w.getBalance, amount, w.appState)
 	w.balancesCache[address] = amount
 }
 
