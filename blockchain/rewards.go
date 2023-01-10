@@ -158,12 +158,19 @@ func getFlipRewardExtraCoef(grade types.Grade, stakeWeight float32) float32 {
 	return getFlipRewardBasicCoef(grade) * stakeWeight
 }
 
-func splitFlipsToReward(flipsToReward []*types.FlipToReward) (basic, extra []*types.FlipToReward) {
+func splitFlipsToReward(flipsToReward []*types.FlipToReward, enableUpgrade11 bool) (basic, extra []*types.FlipToReward) {
 	sorted := make([]*types.FlipToReward, len(flipsToReward))
 	copy(sorted, flipsToReward)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		return sorted[i].Grade > sorted[j].Grade
 	})
+	if enableUpgrade11 {
+		basic = sorted
+		if len(sorted) > 3 {
+			extra = sorted[3:]
+		}
+		return
+	}
 	for _, flipToReward := range sorted {
 		if len(basic) < 3 {
 			basic = append(basic, flipToReward)
@@ -229,7 +236,7 @@ func addFlipReward(appState *appstate.AppState, config *config.ConsensusConf, va
 
 		var basicFlipsToReward, extraFlipsToReward []*types.FlipToReward
 		if config.EnableUpgrade10 {
-			basicFlipsToReward, extraFlipsToReward = splitFlipsToReward(author.FlipsToReward)
+			basicFlipsToReward, extraFlipsToReward = splitFlipsToReward(author.FlipsToReward, config.EnableUpgrade11)
 		} else {
 			basicFlipsToReward = author.FlipsToReward
 		}
